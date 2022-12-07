@@ -1,13 +1,27 @@
 use std::collections::HashMap;
 
+pub struct Directory {
+    size_of_files: usize,
+    // fully-qualified
+    subdirectory_names: Vec<String>,
+}
+
+impl Directory {
+    pub fn new() -> Self {
+        Self { size_of_files: 0, subdirectory_names: Vec::new() }
+    }
+
+    pub fn total_size(&self, directory_tree:  &HashMap<String, Directory>) -> usize {
+        self.subdirectory_names.iter().map(|d| directory_tree.get(d).unwrap().total_size(&directory_tree)).sum::<usize>() + self.size_of_files
+    }
+}
+
 #[aoc_generator(day7)]
 pub fn input_generator_part1(input: &str) -> HashMap<String, usize> {
-    let mut file_only_sizes: HashMap<String, usize> = HashMap::new();
-    let mut subdirectory_names: HashMap<String, Vec<String>> = HashMap::new();
+    let mut directories: HashMap<String, Directory> = HashMap::from([(String::from(""), Directory::new())]);
     // the current directory we're in - use "" for the root, instead of "/", to avoid concatenation weirdness
     let mut current_path = String::from("");
     let mut lines = input.lines();
-    let mut all_directories = vec![String::from("")];
     while let Some(line) = lines.next() {
         if line == "$ ls" {
             continue;
@@ -23,33 +37,26 @@ pub fn input_generator_part1(input: &str) -> HashMap<String, usize> {
                 current_path = String::from("");
             } else {
                 current_path = current_path + "/" + new_location;
-                // remember that we've visited this directory
-                all_directories.push(current_path.clone())
+                // remember that we've visited this directory, if we haven't seen it before
+                directories.entry(current_path.clone()).or_insert(Directory::new());
             }
             continue;
         }
 
         // otherwise this is the output from ls
         if let Some((left, right)) = line.split_once(" ") {
+            let mut current_directory = directories.get_mut(&current_path).unwrap();
             if left == "dir" {
                 // this directory has a subdirectory - remember the (full) path of it
-                subdirectory_names.entry(current_path.clone()).or_insert(Vec::new()).push(current_path.clone() + "/" + right);
+                current_directory.subdirectory_names.push(current_path.clone() + "/" + right);
             } else {
                 // this directory contains a file - add its size to the running total for this dir
-                *file_only_sizes.entry(current_path.clone()).or_insert(0) += left.parse::<usize>().unwrap();
+                current_directory.size_of_files += left.parse::<usize>().unwrap();
             }
         }
     }
 
-    all_directories.into_iter().map(|d| (d.clone(), calculate_full_size(&d, &file_only_sizes, &subdirectory_names))).collect()
-}
-
-// could memoize, but why bother
-pub fn calculate_full_size(directory: &str, filesizes: &HashMap<String, usize>, directories: &HashMap<String, Vec<String>>) -> usize {
-    // full size of a directory is the size of all files in it (if any), plus the recursively-calculated size of all its subdirectories
-    let size_of_files = filesizes.get(directory).unwrap_or(&0);
-    let size_of_subdirectories: usize = directories.get(directory).unwrap_or(&Vec::new()).iter().map(|d| calculate_full_size(d, &filesizes, &directories)).sum();
-    size_of_files + size_of_subdirectories
+    directories.iter().map(|(name, d)| (name.clone(), d.total_size(&directories))).collect()
 }
 
 #[aoc(day7, part1)]
