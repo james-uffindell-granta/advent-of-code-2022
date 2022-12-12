@@ -48,15 +48,14 @@ pub fn find_new_tail(tail @ (tail_x, tail_y): (i32, i32), (head_x, head_y): (i32
             let new_tail_y = if tail_y < head_y { tail_y + 1 } else { tail_y - 1 };
             (new_tail_x, new_tail_y)
         },
-        // only dimension has moved 2 - the other dimension is the same as where the head is
-        (2, _) if tail_x < head_x => (tail_x + 1, head_y),
-        (2, _) if tail_x > head_x => (tail_x - 1, head_y),
-        (_, 2) if tail_y < head_y => (head_x, tail_y + 1),
-        (_, 2) if tail_y > head_y => (head_x, tail_y - 1),
-        _ => {
-            println!("{:?}", (x_distance_moved, y_distance_moved));
-            unreachable!()
-        }
+        // only one dimension has moved 2 - tail moves one in that direction; the other dimension ends up the same as where the head has gone
+        (2, 0|1) if tail_x < head_x => (tail_x + 1, head_y),
+        (2, 0|1) if tail_x > head_x => (tail_x - 1, head_y),
+        (0|1, 2) if tail_y < head_y => (head_x, tail_y + 1),
+        (0|1, 2) if tail_y > head_y => (head_x, tail_y - 1),
+        // the previous knot can never have moved more than 2
+        // and we handled the cases <2 higher up
+        _ => unreachable!(),
     }
 }
 
