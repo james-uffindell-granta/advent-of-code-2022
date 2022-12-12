@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, cmp::Reverse};
 
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub enum Operand {
@@ -111,10 +111,9 @@ pub fn run_monkey_loop<F>(monkeys: &HashMap<usize, Monkey>, iteration_count: usi
 pub fn solve_part1(input: &HashMap<usize, Monkey>) -> usize {
     // post inspection: stop worrying, divide by 3 and lose remainder
     let monkey_business = run_monkey_loop(input, 20, |i| i / 3);
-    let mut monkey_inspections = monkey_business.iter().collect::<Vec<_>>();
-    monkey_inspections
-        .sort_by(|(_, i1), (_, i2)| i2.cmp(i1));
-    monkey_inspections[0].1 * monkey_inspections[1].1
+    let mut monkey_inspections = monkey_business.values().collect::<Vec<_>>();
+    monkey_inspections.sort_by_key(|i| Reverse(*i));
+    monkey_inspections[0] * monkey_inspections[1]
 }
 
 #[aoc(day11, part2)]
@@ -122,11 +121,11 @@ pub fn solve_part2(input: &HashMap<usize, Monkey>) -> usize {
     // remember the product of all the checks
     let monkey_factor = input.values().map(|m| m.divisibility_check).product::<u128>();
     // post inspection: stop number getting too big by taking it mod the product above
+    // this will keep every monkey throwing it to the right place
     let monkey_business = run_monkey_loop(input, 10_000, |i| i % monkey_factor);
-    let mut monkey_inspections = monkey_business.iter().collect::<Vec<_>>();
-    monkey_inspections
-        .sort_by(|(_, i1), (_, i2)| i2.cmp(i1));
-    monkey_inspections[0].1 * monkey_inspections[1].1
+    let mut monkey_inspections = monkey_business.values().collect::<Vec<_>>();
+    monkey_inspections.sort_by_key(|i| Reverse(*i));
+    monkey_inspections[0] * monkey_inspections[1]
 }
 
 #[test]
