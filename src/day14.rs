@@ -182,9 +182,7 @@ pub fn input_generator_part1(input: &str) -> Cave {
     let left = map.keys().map(|c| c.x).min().unwrap();
     let right = map.keys().map(|c| c.x).max().unwrap();
 
-    let cave = Cave { map, bottom, left, right };
-    println!("{}", cave);
-    cave
+    Cave { map, bottom, left, right }
 }
 
 
@@ -211,7 +209,7 @@ pub fn solve_part2(input: &Cave) -> usize {
 }
 
 #[test]
-fn test_day12_input1() {
+fn test_day14_input1() {
     let input =
 r#"498,4 -> 498,6 -> 496,6
 503,4 -> 502,4 -> 502,9 -> 494,9
