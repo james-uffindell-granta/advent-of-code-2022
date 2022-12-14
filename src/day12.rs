@@ -43,14 +43,22 @@ impl Grid {
         .collect()
     }
 
-    // brute force path checking is too slow; use dijkstra's algorithm
+    // use dijkstra's algorithm
+    // calculate "shortest distance from start to here" for all points in the grid
     pub fn calculate_distances(&self, start: &Coord, direction: Direction) -> HashMap<Coord, Option<usize>> {
+        // we haven't handled these points yet
         let mut unvisited_nodes = self.grid.keys().cloned().collect::<HashSet<_>>();
+        // distances to point from start (value=Some(x) means we found a route of length x; value=None means we didn't find a route yet)
         let mut distance_map = unvisited_nodes.iter().cloned()
             .map(|n| (n, None)).collect::<HashMap<_, _>>();
 
+        // start point is 0 away from start
         *distance_map.get_mut(start).unwrap() = Some(0usize);
 
+        // find a point in the grid where:
+        // - we've found a route from the start to it already
+        // - it's the shortest distance away from the start of all the places we've found routes to
+        // (for now, there's only one of these - the start point itself, with distance 0)
         let mut smallest_node = unvisited_nodes.iter().cloned()
         .filter(|c| matches!(distance_map.get(c).unwrap(), Some(_)))
         .min_by_key(|c| {
@@ -60,20 +68,23 @@ impl Grid {
             }
         });
 
+        // this will keep going until either we handle every node, or until every remaining node has a value of None
+        // (which means all the remaining nodes are unreachable from the start)
         while let Some(current_node) = smallest_node {
-            // get the reachable, unvisited, neighbours
+            // get the neighbours of the point we're looking at...
             let neighbours = self.moves_from(current_node).into_iter()
+                // ... which we haven't already finished working with
                 .filter(|c| unvisited_nodes.contains(&c))
+                // ... and which we can actually move to from where we are
                 .filter(|c| match direction {
                     Direction::Forwards => self.grid.get(&current_node).unwrap().can_move_to(self.grid.get(c).unwrap()),
                     Direction::Backwards => self.grid.get(c).unwrap().can_move_to(self.grid.get(&current_node).unwrap()),
             }).collect::<Vec<_>>();
-            let current_distance = match distance_map.get(&current_node).unwrap() {
-                Some(d) => *d,
-                None => unreachable!(),
-            };
 
+            // the current node is this far away from the start
+            let current_distance = distance_map.get(&current_node).unwrap().unwrap();
             for n in neighbours {
+                // each neighbour is one away from here - see if that's a closer route to what we've found to that neighbour already
                 let distance = current_distance + 1;
                 let new_value = match distance_map.get(&n).unwrap() {
                     Some(existing_value) => {
@@ -81,15 +92,20 @@ impl Grid {
                             // found a shorter route
                             distance
                         } else {
+                            // this route is longer - leave the value alone
                             *existing_value
                         }
                     },
+                    // this is the first route there we've found
                     None => distance
                 };
+                // remember the shortest route to that neighbour
                 distance_map.insert(n, Some(new_value));
             }
 
+            // we've handled all neighbours of this node - no need to ever go back to it again
             unvisited_nodes.remove(&current_node);
+            // find a new node that we haven't handled yet which is closest to the start, and repeat
             smallest_node = unvisited_nodes.iter().cloned()
             .filter(|c| matches!(distance_map.get(c).unwrap(), Some(_)))
             .min_by_key(|c| {
@@ -138,6 +154,7 @@ pub fn solve_part1(input: &Input) -> usize {
 
 #[aoc(day12, part2)]
 pub fn solve_part2(input: &Input) -> usize {
+    // same thing, but backwards from the end - for each point, find the shortest distance from it to the end
     let distance_map = input.map.calculate_distances(&input.ending_coord, Direction::Backwards);
     let lowest_elevation_squares = input.map.grid.iter().filter(|(_, e)| e.value == 'a').map(|(c, _)| c).collect::<Vec<_>>();
     lowest_elevation_squares.into_iter().filter_map(|c| *distance_map.get(&c).unwrap()).min().unwrap()
