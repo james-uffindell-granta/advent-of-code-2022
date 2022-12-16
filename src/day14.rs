@@ -173,7 +173,6 @@ pub fn input_generator_part1(input: &str) -> Cave {
                 // bad input?
                 unreachable!()
             }
-            
         }
     }
 
@@ -184,7 +183,6 @@ pub fn input_generator_part1(input: &str) -> Cave {
 
     Cave { map, bottom, left, right }
 }
-
 
 #[aoc(day14, part1)]
 pub fn solve_part1(input: &Cave) -> usize {
