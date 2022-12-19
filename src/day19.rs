@@ -86,9 +86,8 @@ impl Sum for Stock {
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct Factory {
     current_stock: Stock,
-    // not as pretty, but maybe faster?
-    // current_robots: (u8, u8, u8, u8),
-    current_active_robots: Vec<Robot>,
+    // did have a vec<robot> before, but this is like three times faster
+    current_robots: (u8, u8, u8, u8),
     time_left: usize,
 }
 
@@ -96,28 +95,26 @@ impl Factory {
     pub fn new(time: usize) -> Self {
         Self {
             current_stock: Stock::empty(),
-            current_active_robots: vec![Robot::Ore],
+            current_robots: (1, 0, 0, 0),
             time_left: time,
         }
     }
 
     pub fn resources_gathered(&self) -> Stock {
-        self.current_active_robots.iter().map(|r| r.retrieved_stock()).sum()
+        let (ore, clay, obs, geode) = self.current_robots;
+        (ore as i64, clay as i64, obs as i64, geode as i64).into()
     }
 
     pub fn worth_building(&self, prices: &HashMap<Robot, Stock>, robot: &Robot) -> bool {
         let geode_robot_cost = prices.get(&Robot::Geode).unwrap();
 
-        let number_obsidian_robots = self.current_active_robots.
-            iter().filter(|&r| matches!(r, Robot::Obsidian)).count() as i64;
+        let number_obsidian_robots = self.current_robots.2;
         let obsidian_robot_cost = prices.get(&Robot::Obsidian).unwrap();
 
-        let number_clay_robots = self.current_active_robots.
-            iter().filter(|&r| matches!(r, Robot::Clay)).count() as i64;
+        let number_clay_robots = self.current_robots.1;
         let clay_robot_cost = prices.get(&Robot::Clay).unwrap();
 
-        let number_ore_robots = self.current_active_robots.
-            iter().filter(|&r| matches!(r, Robot::Ore)).count() as i64;
+        let number_ore_robots = self.current_robots.0;
 
         let ore_robots_worth_building =
         geode_robot_cost.ore
@@ -127,9 +124,9 @@ impl Factory {
         match robot {
             // always worth building geode robots
             Robot::Geode => true,
-            Robot::Obsidian => number_obsidian_robots < geode_robot_cost.obsidian,
-            Robot::Clay => number_clay_robots < obsidian_robot_cost.clay,
-            Robot::Ore => number_ore_robots < ore_robots_worth_building
+            Robot::Obsidian => (number_obsidian_robots as i64) < geode_robot_cost.obsidian,
+            Robot::Clay => (number_clay_robots as i64) < obsidian_robot_cost.clay,
+            Robot::Ore => (number_ore_robots as i64) < ore_robots_worth_building
         }
     }
 
@@ -159,16 +156,20 @@ impl Factory {
             if !robots_worth_building_by_time.contains(r) || !self.worth_building(prices, r) {
                 return None;
             }
+            let (old_ore, old_clay, old_obs, old_geode) = self.current_robots;
+            let new_robots: (u8, u8, u8, u8) = match r {
+                Robot::Ore => (old_ore + 1, old_clay, old_obs, old_geode),
+                Robot::Clay => (old_ore, old_clay + 1, old_obs, old_geode),
+                Robot::Obsidian => (old_ore, old_clay, old_obs + 1, old_geode),
+                Robot::Geode => (old_ore, old_clay, old_obs, old_geode + 1),
+            };
 
             // we have to be able to afford the robot with our current stocks
             self.current_stock.try_afford(p)
                 .map(|leftover| {
-                    let mut new_robots = self.current_active_robots
-                    .iter().cloned().chain(std::iter::once(*r)).collect::<Vec<_>>();
-                    new_robots.sort();
                     Factory {
                         current_stock: leftover + new_resources_gathered,
-                        current_active_robots: new_robots,
+                        current_robots: new_robots,
                         time_left: self.time_left - 1,
                     }
         })
@@ -182,7 +183,7 @@ impl Factory {
         // otherwise always possible to do nothing
         robot_options.into_iter().chain(std::iter::once(Factory {
             current_stock: self.current_stock + new_resources_gathered,
-            current_active_robots: self.current_active_robots.clone(),
+            current_robots: self.current_robots,
             time_left: self.time_left - 1,
         })).collect()
     }
@@ -208,16 +209,13 @@ pub fn get_most_geodes(
     prices: &HashMap<Robot, Stock>,
     seen_states: &mut HashMap<Factory, i64>) -> i64 {
 
-    let number_geode_robots = start.current_active_robots.
-        iter().filter(|&r| matches!(r, Robot::Geode)).count() as i64;
+    let number_geode_robots = start.current_robots.3 as i64;
     let geode_robot_cost = prices.get(&Robot::Geode).unwrap();
 
-    let number_obsidian_robots = start.current_active_robots.
-        iter().filter(|&r| matches!(r, Robot::Obsidian)).count() as i64;
+    let number_obsidian_robots = start.current_robots.2 as i64;
     let obsidian_robot_cost = prices.get(&Robot::Obsidian).unwrap();
 
-    let number_clay_robots = start.current_active_robots.
-        iter().filter(|&r| matches!(r, Robot::Clay)).count() as i64;
+    let number_clay_robots = start.current_robots.1;
 
     // if we already know the best answer for this factory, then return it
     if let Some(geodes) = seen_states.get(start) {
@@ -332,7 +330,6 @@ pub fn get_most_geodes(
     // otherwise it has at least one step left - move one time unit forward and see
     // what the options are
     let mut best_geodes = 0;
-    // println!("Checking all next steps for factory {:?}", start);
     for step in start.next_steps(prices) {
         // if we took a step forward to a situation we've seen before,
         // we can just fetch the answer - otherwise, recurse (remembering)

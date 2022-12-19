@@ -40,7 +40,6 @@ impl From<(i32, i32, i32)> for Coord {
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub enum CubeState {
     ReachedAndExternal,
-    Reached,
     NotReached,
 }
 
@@ -144,7 +143,6 @@ impl Droplet {
                     || c.z < self.min_z || c.z > self.max_z
                 }) {
                     // we can reach the outside from here - so this cube isn't an interal void
-                    // println!("found the outside");
                     let external_cube = new_state.get_mut(coord).unwrap();
                     external_cube.state = CubeState::ReachedAndExternal;
                     updated = true;
@@ -152,7 +150,6 @@ impl Droplet {
                     matches!(unfilled_cells.get(c),
                         Some(Cube { visible_faces: _, state: CubeState::ReachedAndExternal }))
                 }) {
-                    // println!("found another cube that found the outside");
                     let external_cube = new_state.get_mut(coord).unwrap();
                     external_cube.state = CubeState::ReachedAndExternal;
                     updated = true;
