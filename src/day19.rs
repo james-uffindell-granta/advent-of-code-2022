@@ -113,17 +113,25 @@ impl Factory {
 
         let number_clay_robots = self.current_robots.1;
         let clay_robot_cost = prices.get(&Robot::Clay).unwrap();
+        let ore_robot_cost = prices.get(&Robot::Ore).unwrap();
 
         let number_ore_robots = self.current_robots.0;
 
         let ore_robots_worth_building =
         geode_robot_cost.ore
             .max(obsidian_robot_cost.ore)
-            .max(clay_robot_cost.ore);
+            .max(clay_robot_cost.ore)
+            .max(ore_robot_cost.ore);
 
         match robot {
             // always worth building geode robots
             Robot::Geode => true,
+            // otherwise, it's only (potentially) worth building a robot if we have
+            // fewer than the amount of materials needed to build another robot
+            // we can only build one robot a turn, so (for example) if an obsidian
+            // robot requires 5 clay, there's no point in ever having more than 5 clay
+            // robots, since they'll be collecting clay at a faster rate than we could
+            // ever spend - we may as well not have bothered making the excess clay robots
             Robot::Obsidian => (number_obsidian_robots as i64) < geode_robot_cost.obsidian,
             Robot::Clay => (number_clay_robots as i64) < obsidian_robot_cost.clay,
             Robot::Ore => (number_ore_robots as i64) < ore_robots_worth_building
@@ -181,6 +189,10 @@ impl Factory {
         }
 
         // otherwise always possible to do nothing
+        // one possible optimization here we aren't doing:
+        // if we do nothing, but we could have built robots this turn, then 
+        // we shouldn't built those robots next turn (there's no point building
+        // a robot later than you have to, if you're going to build it anyway)
         robot_options.into_iter().chain(std::iter::once(Factory {
             current_stock: self.current_stock + new_resources_gathered,
             current_robots: self.current_robots,
