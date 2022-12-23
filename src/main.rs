@@ -1,5 +1,3 @@
-#![feature(map_first_last)]
-
 extern crate advent_of_code_2022;
 extern crate aoc_runner_derive;
 extern crate aoc_runner;

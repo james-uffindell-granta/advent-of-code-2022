@@ -131,27 +131,15 @@ pub fn trace_path(map: &BTreeMap<Coord, Cell>, movements: &Vec<Movement>) -> (Co
                                 (current_coord.x, next_real_y).into()
                             },
                             Facing::Right => {
-                                let Some(next_real_x) = map.keys()
-                                .filter(|&c| c.y == current_coord.y)
-                                .map(|c| c.x).min() else {
-                                    println!("Tried to go right from {:?}, couldn't find coords with same y", current_coord);
-                                    unreachable!()
-                                };
-                                // let next_real_x = map.keys()
-                                //     .filter(|&c| c.y == current_coord.y)
-                                //     .map(|c| c.x).min().unwrap();
+                                let next_real_x = map.keys()
+                                    .filter(|&c| c.y == current_coord.y)
+                                    .map(|c| c.x).min().unwrap();
                                 (next_real_x, current_coord.y).into()
                             },
                             Facing::Down => {
-                                let Some(next_real_y) = map.keys()
-                                .filter(|&c| c.x == current_coord.x)
-                                .map(|c| c.y).min() else {
-                                    println!("Tried to go down from {:?}, couldn't find coords with same x", current_coord);
-                                    unreachable!()
-                                };
-                                // let next_real_y = map.keys()
-                                //     .filter(|&c| c.x == current_coord.x)
-                                //     .map(|c| c.y).min().unwrap();
+                                let next_real_y = map.keys()
+                                    .filter(|&c| c.x == current_coord.x)
+                                    .map(|c| c.y).min().unwrap();
                                 (current_coord.x, next_real_y).into()
                             },
                             Facing::Left => {
@@ -206,14 +194,6 @@ pub fn on_f(coord: &Coord) -> bool {
     coord.x >= 1 && coord.x <= 50 && coord.y >= 151 && coord.y <= 200
 }
 
-pub fn relative_coord(c: usize) -> usize {
-    if c % 50 == 0 {
-        50
-    } else {
-        c % 50
-    }
-}
-
 pub fn trace_path_on_cube(map: &BTreeMap<Coord, Cell>, movements: &Vec<Movement>) -> (Coord, Facing) {
     let start = *map.keys().filter(|&c| c.y == 1).min_by_key(|&c| c.x).unwrap();
     let mut current_coord = start;
@@ -241,8 +221,7 @@ pub fn trace_path_on_cube(map: &BTreeMap<Coord, Cell>, movements: &Vec<Movement>
                             }
                         }
                     } else {
-                        // cell isn't in grid - wrap around
-                        // but on a cube
+                        // cell isn't in grid - wrap around but on a cube
                         // no idea if there's a clever way to cope with the input here,
                         // just hardcode the shape
                         //   AB
@@ -250,7 +229,6 @@ pub fn trace_path_on_cube(map: &BTreeMap<Coord, Cell>, movements: &Vec<Movement>
                         //  DE
                         //  F
                         let (next_coord, next_facing) = match current_facing {
-                            // checked these
                             Facing::Up => {
                                 // three possibilities 
                                 // going up off the top of D - we end up on the left side
@@ -271,7 +249,7 @@ pub fn trace_path_on_cube(map: &BTreeMap<Coord, Cell>, movements: &Vec<Movement>
                                     ((next_real_x, next_real_y).into(), Facing::Right)
                                 } else if on_b(&current_coord) {
                                     // gone up off the top of B - we come in on the bottom of F
-                                    let next_real_x = (current_coord.x - 100);
+                                    let next_real_x = current_coord.x - 100;
                                     let next_real_y = 200;
                                     let new_coord = (next_real_x, next_real_y).into();
                                     assert!(on_f(&new_coord));
@@ -281,7 +259,6 @@ pub fn trace_path_on_cube(map: &BTreeMap<Coord, Cell>, movements: &Vec<Movement>
                                     unreachable!();
                                 }
                             },
-                            // checked
                             Facing::Right => {
                                 if on_b(&current_coord) {
                                     // gone off the right of B - we end up on the right of E
