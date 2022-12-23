@@ -1,23 +1,23 @@
 pub struct Input {}
 
-#[aoc_generator(day24)]
+#[aoc_generator(day25)]
 pub fn input_generator_part1(_input: &str) -> Input {
     Input {}
 }
 
 
-#[aoc(day24, part1)]
+#[aoc(day25, part1)]
 pub fn solve_part1(_input: &Input) -> usize {
     0
 }
 
-#[aoc(day24, part2)]
+#[aoc(day25, part2)]
 pub fn solve_part2(_input: &Input) -> usize {
     0
 }
 
 #[test]
-fn test_day24_input1() {
+fn test_day25_input1() {
     let input =
 r#"puzzle_input_here
 "#;
