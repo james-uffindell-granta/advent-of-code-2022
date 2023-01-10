@@ -1,9 +1,9 @@
-use std::{collections::HashMap, cmp::Reverse};
+use std::{cmp::Reverse, collections::HashMap};
 
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub enum Operand {
     OldValue,
-    SpecificValue(u128)
+    SpecificValue(u128),
 }
 
 #[derive(Clone, PartialEq, Eq)]
@@ -24,44 +24,88 @@ pub fn input_generator_part1(input: &str) -> HashMap<usize, Monkey> {
 
     for monkey in monkeys {
         let mut monkey_lines = monkey.lines();
-        let monkey_id = monkey_lines.next().unwrap()
-            .strip_prefix("Monkey ").unwrap().strip_suffix(":").unwrap()
-            .parse::<usize>().unwrap();
-        let monkey_items = monkey_lines.next().unwrap().trim()
-            .strip_prefix("Starting items: ").unwrap().split(", ")
-            .map(|s| s.parse::<_>().unwrap()).collect::<Vec<_>>();
-        let (operation, value) = monkey_lines.next().unwrap().trim()
-            .strip_prefix("Operation: new = old ").unwrap().split_once(" ").unwrap();
+        let monkey_id = monkey_lines
+            .next()
+            .unwrap()
+            .strip_prefix("Monkey ")
+            .unwrap()
+            .strip_suffix(':')
+            .unwrap()
+            .parse::<usize>()
+            .unwrap();
+        let monkey_items = monkey_lines
+            .next()
+            .unwrap()
+            .trim()
+            .strip_prefix("Starting items: ")
+            .unwrap()
+            .split(", ")
+            .map(|s| s.parse::<_>().unwrap())
+            .collect::<Vec<_>>();
+        let (operation, value) = monkey_lines
+            .next()
+            .unwrap()
+            .trim()
+            .strip_prefix("Operation: new = old ")
+            .unwrap()
+            .split_once(' ')
+            .unwrap();
 
         let operand = match value {
             "old" => Operand::OldValue,
             v => Operand::SpecificValue(v.parse().unwrap()),
         };
 
-        let divisibility_test = monkey_lines.next().unwrap().trim()
-            .strip_prefix("Test: divisible by ").unwrap().parse::<_>().unwrap();
+        let divisibility_test = monkey_lines
+            .next()
+            .unwrap()
+            .trim()
+            .strip_prefix("Test: divisible by ")
+            .unwrap()
+            .parse::<_>()
+            .unwrap();
 
-        let true_monkey = monkey_lines.next().unwrap().trim()
-            .strip_prefix("If true: throw to monkey ").unwrap().parse::<usize>().unwrap();
-        let false_monkey = monkey_lines.next().unwrap().trim()
-            .strip_prefix("If false: throw to monkey ").unwrap().parse::<usize>().unwrap();
+        let true_monkey = monkey_lines
+            .next()
+            .unwrap()
+            .trim()
+            .strip_prefix("If true: throw to monkey ")
+            .unwrap()
+            .parse::<usize>()
+            .unwrap();
+        let false_monkey = monkey_lines
+            .next()
+            .unwrap()
+            .trim()
+            .strip_prefix("If false: throw to monkey ")
+            .unwrap()
+            .parse::<usize>()
+            .unwrap();
 
-        monkey_dict.insert(monkey_id, Monkey {
-            starting_items: monkey_items,
-            operation: operation.chars().next().unwrap(),
-            operand: operand,
-            divisibility_check: divisibility_test,
-            true_monkey_id: true_monkey,
-            false_monkey_id: false_monkey,
-        });
+        monkey_dict.insert(
+            monkey_id,
+            Monkey {
+                starting_items: monkey_items,
+                operation: operation.chars().next().unwrap(),
+                operand,
+                divisibility_check: divisibility_test,
+                true_monkey_id: true_monkey,
+                false_monkey_id: false_monkey,
+            },
+        );
     }
 
     monkey_dict
 }
 
-pub fn run_monkey_loop<F>(monkeys: &HashMap<usize, Monkey>, iteration_count: usize, post_inspection_operation: F)
-    -> HashMap<usize, usize>
-    where F : Fn(u128) -> u128 {
+pub fn run_monkey_loop<F>(
+    monkeys: &HashMap<usize, Monkey>,
+    iteration_count: usize,
+    post_inspection_operation: F,
+) -> HashMap<usize, usize>
+where
+    F: Fn(u128) -> u128,
+{
     let monkey_count = monkeys.keys().len();
     let mut monkeys: HashMap<_, _> = monkeys.clone();
 
@@ -89,7 +133,9 @@ pub fn run_monkey_loop<F>(monkeys: &HashMap<usize, Monkey>, iteration_count: usi
                     monkey.false_monkey_id
                 };
 
-                let other_monkey = thrown_items_dict.entry(monkey_id_to_throw_to).or_insert(Vec::new());
+                let other_monkey = thrown_items_dict
+                    .entry(monkey_id_to_throw_to)
+                    .or_insert(Vec::new());
                 other_monkey.push(bored_item);
             }
 
@@ -106,7 +152,6 @@ pub fn run_monkey_loop<F>(monkeys: &HashMap<usize, Monkey>, iteration_count: usi
     monkey_business
 }
 
-
 #[aoc(day11, part1)]
 pub fn solve_part1(input: &HashMap<usize, Monkey>) -> usize {
     // post inspection: stop worrying, divide by 3 and lose remainder
@@ -119,7 +164,10 @@ pub fn solve_part1(input: &HashMap<usize, Monkey>) -> usize {
 #[aoc(day11, part2)]
 pub fn solve_part2(input: &HashMap<usize, Monkey>) -> usize {
     // remember the product of all the checks
-    let monkey_factor = input.values().map(|m| m.divisibility_check).product::<u128>();
+    let monkey_factor = input
+        .values()
+        .map(|m| m.divisibility_check)
+        .product::<u128>();
     // post inspection: stop number getting too big by taking it mod the product above
     // this will keep every monkey throwing it to the right place
     let monkey_business = run_monkey_loop(input, 10_000, |i| i % monkey_factor);
@@ -130,8 +178,7 @@ pub fn solve_part2(input: &HashMap<usize, Monkey>) -> usize {
 
 #[test]
 fn test_day11_input1() {
-    let input =
-r#"Monkey 0:
+    let input = r#"Monkey 0:
 Starting items: 79, 98
 Operation: new = old * 19
 Test: divisible by 23

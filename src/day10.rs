@@ -40,7 +40,9 @@ pub fn solve_part1(input: &Vec<Instruction>) -> i32 {
         }
 
         match i {
-            Instruction::Noop => { current_cycle_number += 1; },
+            Instruction::Noop => {
+                current_cycle_number += 1;
+            }
             Instruction::Addx(amount) => {
                 // add takes 2 steps - check the one we'll skip
                 if current_cycle_number + 1 == next_cycle_to_save {
@@ -51,10 +53,9 @@ pub fn solve_part1(input: &Vec<Instruction>) -> i32 {
                 current_cycle_number += 2;
                 register_value += amount;
             }
-
         }
     }
-    
+
     cycle_values_to_use.iter().take(6).map(|(c, v)| c * v).sum()
 }
 
@@ -63,7 +64,7 @@ pub fn sprite_overlaps(sprite_center: i32, location: i32) -> bool {
 }
 
 #[aoc(day10, part2)]
-pub fn solve_part2(input: &Vec<Instruction>) -> String {
+pub fn solve_part2(input: &[Instruction]) -> String {
     let mut register_value = 1;
     let mut current_row = String::new();
     let mut rows = Vec::new();
@@ -74,23 +75,27 @@ pub fn solve_part2(input: &Vec<Instruction>) -> String {
 
     for cycle_number in 1..=240 {
         let column_number = (cycle_number - 1) % 40;
-        current_row += if sprite_overlaps(register_value, column_number) { &"#" } else { &"." };
+        current_row += if sprite_overlaps(register_value, column_number) {
+            "#"
+        } else {
+            "."
+        };
 
         match (current_state, current_instruction) {
             (State::Beginning, Instruction::Noop) => {
                 // nothing more to do; fetch the next instruction
                 current_instruction = instructions.next().unwrap_or(&Instruction::Noop);
-            },
+            }
             (State::Beginning, Instruction::Addx(_)) => {
                 // this takes two cycles, so we need to enter the still-adding state for next time round
                 current_state = State::StillAdding;
-            },
+            }
             (State::StillAdding, Instruction::Addx(value)) => {
                 // this is our second cycle of the add, so finish it off
                 register_value += value;
                 current_state = State::Beginning;
                 current_instruction = instructions.next().unwrap_or(&Instruction::Noop);
-            },
+            }
             _ => unreachable!(),
         }
 
@@ -100,7 +105,7 @@ pub fn solve_part2(input: &Vec<Instruction>) -> String {
             current_row = String::new();
         }
     }
-    
+
     let mut output = String::from("\n");
     for r in rows {
         output += &r;
@@ -112,8 +117,7 @@ pub fn solve_part2(input: &Vec<Instruction>) -> String {
 
 #[test]
 fn test_day10_input1() {
-    let input =
-r#"addx 15
+    let input = r#"addx 15
 addx -11
 addx 6
 addx -3
@@ -261,7 +265,7 @@ noop
 noop
 "#;
 
-let result = r#"
+    let result = r#"
 ##..##..##..##..##..##..##..##..##..##..
 ###...###...###...###...###...###...###.
 ####....####....####....####....####....

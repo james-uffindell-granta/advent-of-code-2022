@@ -1,7 +1,4 @@
-use std::{
-    collections::HashMap,
-    ops::Add
-};
+use std::{collections::HashMap, ops::Add};
 
 pub struct Input {}
 
@@ -14,20 +11,26 @@ pub struct Coord {
 
 impl Coord {
     pub fn cube_neighbours(self) -> Vec<Coord> {
-        vec![self + (1, 0, 0),
-        self + (-1, 0, 0),
-        self + (0, 1, 0),
-        self + (0, -1, 0),
-        self + (0, 0, 1),
-        self + (0, 0, -1)]
-    }  
+        vec![
+            self + (1, 0, 0),
+            self + (-1, 0, 0),
+            self + (0, 1, 0),
+            self + (0, -1, 0),
+            self + (0, 0, 1),
+            self + (0, 0, -1),
+        ]
+    }
 }
 
 impl Add<(i32, i32, i32)> for Coord {
     type Output = Coord;
 
     fn add(self, (other_x, other_y, other_z): (i32, i32, i32)) -> Self::Output {
-        Self::Output { x: self.x + other_x, y: self.y + other_y, z: self.z + other_z }
+        Self::Output {
+            x: self.x + other_x,
+            y: self.y + other_y,
+            z: self.z + other_z,
+        }
     }
 }
 
@@ -42,7 +45,6 @@ pub enum CubeState {
     ReachedAndExternal,
     NotReached,
 }
-
 
 #[derive(Copy, Clone, Debug, Hash)]
 pub struct Cube {
@@ -66,10 +68,14 @@ impl Droplet {
     pub fn new() -> Self {
         Self {
             cubes: HashMap::new(),
-            min_x: i32::MAX, max_x: i32::MIN,
-            min_y: i32::MAX, max_y: i32::MIN,
-            min_z: i32::MAX, max_z: i32::MIN,
-            internal_voids: HashMap::new(), }
+            min_x: i32::MAX,
+            max_x: i32::MIN,
+            min_y: i32::MAX,
+            max_y: i32::MIN,
+            min_z: i32::MAX,
+            max_z: i32::MIN,
+            internal_voids: HashMap::new(),
+        }
     }
 
     pub fn add_cube_to(map: &mut HashMap<Coord, Cube>, coord: &Coord) {
@@ -80,7 +86,13 @@ impl Droplet {
                 neighbours_existing += 1;
             }
         }
-        map.insert(*coord, Cube { visible_faces: 6 - neighbours_existing, state: CubeState::NotReached });
+        map.insert(
+            *coord,
+            Cube {
+                visible_faces: 6 - neighbours_existing,
+                state: CubeState::NotReached,
+            },
+        );
     }
 
     pub fn add_cube_at(&mut self, coord: &Coord) {
@@ -94,13 +106,20 @@ impl Droplet {
     }
 
     pub fn visible_faces(&self) -> usize {
-        self.cubes.iter().map(|(_, cube)| cube.visible_faces as usize).sum::<usize>()
+        self.cubes
+            .values()
+            .map(|cube| cube.visible_faces as usize)
+            .sum::<usize>()
     }
 
     pub fn visible_external_faces(&self) -> usize {
         let visible_faces = self.visible_faces();
-        let internal_void_faces = self.internal_voids.iter().map(|(_, cube)| cube.visible_faces as usize).sum::<usize>();
-        println!("{} visible faces, {} internal", visible_faces, internal_void_faces);
+        let internal_void_faces = self
+            .internal_voids
+            .values()
+            .map(|cube| cube.visible_faces as usize)
+            .sum::<usize>();
+        println!("{visible_faces} visible faces, {internal_void_faces} internal");
         visible_faces - internal_void_faces
     }
 
@@ -110,7 +129,7 @@ impl Droplet {
             for y in self.min_y..=self.max_y {
                 for z in self.min_z..=self.max_z {
                     let coord = (x, y, z).into();
-                    if let Some(_) = self.cubes.get(&coord) {
+                    if self.cubes.get(&coord).is_some() {
                         //nothing
                     } else {
                         Self::add_cube_to(&mut unfilled_cells, &coord);
@@ -129,27 +148,33 @@ impl Droplet {
             let mut updated = false;
 
             // check everything that we had last time that we hadn't assessed yet
-            for (coord, _) in unfilled_cells.iter()
-                .filter(|(_, &c)| matches!(c.state, CubeState::NotReached)) {
-
+            for (coord, _) in unfilled_cells
+                .iter()
+                .filter(|(_, &c)| matches!(c.state, CubeState::NotReached))
+            {
                 let neighbours = coord.cube_neighbours();
                 // ignore everything that's part of the lava droplet - we can't go that way
-                let neighbours = neighbours.iter()
-                    .filter(|c| !self.cubes.contains_key(c)).collect::<Vec<_>>();
+                let neighbours = neighbours
+                    .iter()
+                    .filter(|c| !self.cubes.contains_key(c))
+                    .collect::<Vec<_>>();
 
                 if neighbours.iter().any(|c| {
-                    c.x < self.min_x || c.x > self.max_x
-                    || c.y < self.min_y || c.y > self.max_y
-                    || c.z < self.min_z || c.z > self.max_z
+                    c.x < self.min_x
+                        || c.x > self.max_x
+                        || c.y < self.min_y
+                        || c.y > self.max_y
+                        || c.z < self.min_z
+                        || c.z > self.max_z
+                        || matches!(
+                            unfilled_cells.get(c),
+                            Some(Cube {
+                                visible_faces: _,
+                                state: CubeState::ReachedAndExternal
+                            })
+                        )
                 }) {
-                    // we can reach the outside from here - so this cube isn't an interal void
-                    let external_cube = new_state.get_mut(coord).unwrap();
-                    external_cube.state = CubeState::ReachedAndExternal;
-                    updated = true;
-                } else if neighbours.iter().any(|c| {
-                    matches!(unfilled_cells.get(c),
-                        Some(Cube { visible_faces: _, state: CubeState::ReachedAndExternal }))
-                }) {
+                    // we can reach the outside from here - so this cube isn't an internal void
                     let external_cube = new_state.get_mut(coord).unwrap();
                     external_cube.state = CubeState::ReachedAndExternal;
                     updated = true;
@@ -172,25 +197,32 @@ impl Droplet {
     }
 }
 
+impl Default for Droplet {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[aoc_generator(day18)]
 pub fn input_generator_part1(input: &str) -> Droplet {
     let mut droplet = Droplet::new();
     for line in input.lines() {
-        let mut components = line.split(",");
+        let mut components = line.split(',');
         let x = components.next().unwrap().parse().unwrap();
         let y = components.next().unwrap().parse().unwrap();
         let z = components.next().unwrap().parse().unwrap();
         let coord = (x, y, z).into();
-                droplet.add_cube_at(&coord);
+        droplet.add_cube_at(&coord);
     }
     droplet
 }
 
-
 #[aoc(day18, part1)]
 pub fn solve_part1(input: &Droplet) -> usize {
-    println!("Droplet spans {} to {}, {} to {}, {} to {}",
-input.min_x, input.max_x, input.min_y, input.max_y, input.min_z, input.max_z);
+    println!(
+        "Droplet spans {} to {}, {} to {}, {} to {}",
+        input.min_x, input.max_x, input.min_y, input.max_y, input.min_z, input.max_z
+    );
     input.visible_faces()
 }
 
@@ -203,8 +235,7 @@ pub fn solve_part2(input: &Droplet) -> usize {
 
 #[test]
 fn test_day18_input1() {
-    let input =
-r#"2,2,2
+    let input = r#"2,2,2
 1,2,2
 3,2,2
 2,1,2

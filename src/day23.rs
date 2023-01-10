@@ -1,8 +1,6 @@
 use std::{
-    collections::{
-        HashSet, VecDeque,
-    },
-    ops::Add
+    collections::{HashSet, VecDeque},
+    ops::Add,
 };
 
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
@@ -16,7 +14,7 @@ impl Coord {
         vec![
             self + (0, 1),
             self + (1, 1),
-            self + (1, 0), 
+            self + (1, 0),
             self + (1, -1),
             self + (0, -1),
             self + (-1, -1),
@@ -49,7 +47,10 @@ impl Add<(i64, i64)> for Coord {
     type Output = Coord;
 
     fn add(self, (other_x, other_y): (i64, i64)) -> Self::Output {
-        Self::Output { x: self.x + other_x, y: self.y + other_y }
+        Self::Output {
+            x: self.x + other_x,
+            y: self.y + other_y,
+        }
     }
 }
 
@@ -100,19 +101,23 @@ impl Input {
 
 impl std::fmt::Display for Input {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let map = self.elves.iter().map(|e| e.current_coord).collect::<HashSet<_>>();
+        let map = self
+            .elves
+            .iter()
+            .map(|e| e.current_coord)
+            .collect::<HashSet<_>>();
         let (min_y, max_y) = self.bounding_y_range();
         let (min_x, max_x) = self.bounding_x_range();
 
         for row in min_y..=max_y {
             for col in min_x..=max_x {
-                if let Some(_) = map.get(&(col, row).into()) {
+                if map.get(&(col, row).into()).is_some() {
                     write!(f, "#")?
                 } else {
                     write!(f, ".")?;
                 }
             }
-            write!(f, "\n")?;
+            writeln!(f)?;
         }
 
         Ok(())
@@ -126,7 +131,10 @@ pub fn input_generator_part1(input: &str) -> Input {
         for (col_number, c) in line.chars().enumerate() {
             let coord = (col_number as i64, row_number as i64).into();
             if c == '#' {
-                elves.push(Elf { current_coord: coord, proposed_coord: None });
+                elves.push(Elf {
+                    current_coord: coord,
+                    proposed_coord: None,
+                });
             }
         }
     }
@@ -137,13 +145,26 @@ pub fn input_generator_part1(input: &str) -> Input {
 pub fn step(elves: &mut [Elf], direction_order: &VecDeque<Direction>) -> bool {
     let mut moved = false;
     // part 1: propose a move
-    let current_elf_locations = elves.iter().map(|e| e.current_coord).collect::<HashSet<_>>();
+    let current_elf_locations = elves
+        .iter()
+        .map(|e| e.current_coord)
+        .collect::<HashSet<_>>();
     let mut proposed_elf_locations = HashSet::new();
     let mut duplicate_proposed_elf_locations = HashSet::new();
     for mut elf in &mut *elves {
-        if elf.current_coord.neighbours().iter().any(|c| current_elf_locations.contains(c)) {
+        if elf
+            .current_coord
+            .neighbours()
+            .iter()
+            .any(|c| current_elf_locations.contains(c))
+        {
             'directions: for d in direction_order {
-                if elf.current_coord.neighbours_in_direction(d).iter().any(|c| current_elf_locations.contains(c)) {
+                if elf
+                    .current_coord
+                    .neighbours_in_direction(d)
+                    .iter()
+                    .any(|c| current_elf_locations.contains(c))
+                {
                     // there's already an elf over there - don't go that way
                 } else {
                     // found a direction with no elves: move that way
@@ -169,7 +190,7 @@ pub fn step(elves: &mut [Elf], direction_order: &VecDeque<Direction>) -> bool {
         match elf.proposed_coord {
             None => {
                 // do nothing - current coord is still fine
-            },
+            }
             Some(new_coord) => {
                 if !duplicate_proposed_elf_locations.contains(&new_coord) {
                     elf.current_coord = new_coord;
@@ -184,17 +205,19 @@ pub fn step(elves: &mut [Elf], direction_order: &VecDeque<Direction>) -> bool {
     }
 
     moved
-
 }
-
 
 #[aoc(day23, part1)]
 pub fn solve_part1(input: &Input) -> i64 {
     let mut direction_order = VecDeque::from([
-        Direction::North, Direction::South, Direction::West, Direction::East]);
+        Direction::North,
+        Direction::South,
+        Direction::West,
+        Direction::East,
+    ]);
 
     let mut input = input.clone();
-    let step_count =10;
+    let step_count = 10;
     for _ in 1..=step_count {
         step(&mut input.elves, &direction_order);
         // move the directions
@@ -212,7 +235,11 @@ pub fn solve_part1(input: &Input) -> i64 {
 #[aoc(day23, part2)]
 pub fn solve_part2(input: &Input) -> usize {
     let mut direction_order = VecDeque::from([
-        Direction::North, Direction::South, Direction::West, Direction::East]);
+        Direction::North,
+        Direction::South,
+        Direction::West,
+        Direction::East,
+    ]);
 
     let mut input = input.clone();
     for round_number in 1.. {
@@ -224,14 +251,13 @@ pub fn solve_part2(input: &Input) -> usize {
         let first_direction = direction_order.pop_front().unwrap();
         direction_order.push_back(first_direction);
     }
-    
+
     unreachable!()
 }
 
 #[test]
 fn test_day23_input1() {
-    let input =
-r#".....
+    let input = r#".....
 ..##.
 ..#..
 .....
@@ -249,8 +275,7 @@ r#".....
 
 #[test]
 fn test_day23_input2() {
-    let input =
-r#"..............
+    let input = r#"..............
 ..............
 .......#......
 .....###.#....

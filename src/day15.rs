@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
 pub struct Coord {
-    x : i32,
+    x: i32,
     y: i32,
 }
 
@@ -45,7 +45,8 @@ pub struct SensorReport {
 
 impl SensorReport {
     pub fn distance_scanned(&self) -> i32 {
-        self.sensor_location.manhattan_distance_to(&self.nearest_beacon)
+        self.sensor_location
+            .manhattan_distance_to(&self.nearest_beacon)
     }
 
     fn x_range_scanned(&self) -> (i32, i32) {
@@ -74,14 +75,35 @@ pub fn input_generator_part1(input: &str) -> Input {
     let mut sensors = Vec::new();
     for line in input.lines() {
         let (sensor, beacon) = line.split_once(": ").unwrap();
-        let (sensor_x, sensor_y) = sensor.strip_prefix("Sensor at ").unwrap().split_once(", ").unwrap();
-        let (beacon_x, beacon_y) = beacon.strip_prefix("closest beacon is at ").unwrap().split_once(", ").unwrap();
-        let sensor_location = (sensor_x.strip_prefix("x=").unwrap().parse().unwrap(), sensor_y.strip_prefix("y=").unwrap().parse().unwrap()).into();
-        let nearest_beacon = (beacon_x.strip_prefix("x=").unwrap().parse().unwrap(), beacon_y.strip_prefix("y=").unwrap().parse().unwrap()).into();
-        sensors.push(SensorReport { sensor_location, nearest_beacon });
+        let (sensor_x, sensor_y) = sensor
+            .strip_prefix("Sensor at ")
+            .unwrap()
+            .split_once(", ")
+            .unwrap();
+        let (beacon_x, beacon_y) = beacon
+            .strip_prefix("closest beacon is at ")
+            .unwrap()
+            .split_once(", ")
+            .unwrap();
+        let sensor_location = (
+            sensor_x.strip_prefix("x=").unwrap().parse().unwrap(),
+            sensor_y.strip_prefix("y=").unwrap().parse().unwrap(),
+        )
+            .into();
+        let nearest_beacon = (
+            beacon_x.strip_prefix("x=").unwrap().parse().unwrap(),
+            beacon_y.strip_prefix("y=").unwrap().parse().unwrap(),
+        )
+            .into();
+        sensors.push(SensorReport {
+            sensor_location,
+            nearest_beacon,
+        });
     }
 
-    let mut tunnels = TunnelNetwork { map: HashMap::new() };
+    let mut tunnels = TunnelNetwork {
+        map: HashMap::new(),
+    };
     for sensor in sensors.clone() {
         tunnels.add_sensor(&sensor);
     }
@@ -89,22 +111,36 @@ pub fn input_generator_part1(input: &str) -> Input {
     Input { tunnels, sensors }
 }
 
-
 #[aoc(day15, part1)]
 pub fn solve_part1(input: &Input) -> usize {
-    let min_x = input.sensors.iter().map(|s| s.x_range_scanned().0).min().unwrap();
-    let max_x = input.sensors.iter().map(|s| s.x_range_scanned().1).max().unwrap();
+    let min_x = input
+        .sensors
+        .iter()
+        .map(|s| s.x_range_scanned().0)
+        .min()
+        .unwrap();
+    let max_x = input
+        .sensors
+        .iter()
+        .map(|s| s.x_range_scanned().1)
+        .max()
+        .unwrap();
     let row = 2_000_000;
 
     let mut row_cells = HashSet::new();
     for x in min_x..=max_x {
         let c = (x, row).into();
-        if matches!(input.tunnels.map.get(&c).unwrap_or(&Tile::Unknown), Tile::Sensor | Tile::Beacon) {
+        if matches!(
+            input.tunnels.map.get(&c).unwrap_or(&Tile::Unknown),
+            Tile::Sensor | Tile::Beacon
+        ) {
             continue;
         }
-        if input.sensors.iter().any(|s| {
-            s.sensor_location.manhattan_distance_to(&c) <= s.distance_scanned()
-        }) {
+        if input
+            .sensors
+            .iter()
+            .any(|s| s.sensor_location.manhattan_distance_to(&c) <= s.distance_scanned())
+        {
             row_cells.insert(c);
         }
     }
@@ -117,15 +153,19 @@ pub fn solve_part2(input: &Input) -> u128 {
     let limit = 4_000_000;
     for x in 0..=limit {
         // get all the ranges and order them by lower bound
-        let mut ranges = input.sensors.iter().filter_map(|s| s.y_range_scanned_at(x)).collect::<Vec<_>>();
+        let mut ranges = input
+            .sensors
+            .iter()
+            .filter_map(|s| s.y_range_scanned_at(x))
+            .collect::<Vec<_>>();
         ranges.sort_by_key(|(min, _)| *min);
         let mut ranges = ranges.iter();
         let mut y = 0;
         while y <= limit {
-            while let Some((min, max)) = ranges.next() {
+            for (min, max) in ranges.by_ref() {
                 if y < *min {
                     // next range starts after where we currently are - so beacon must be this point
-                    return (x as u128) * (4_000_000 as u128) + (y as u128);
+                    return (x as u128) * (4_000_000_u128) + (y as u128);
                 }
                 if y >= *min && y < *max {
                     // inside a range, so can't be anything in this range - skip past it
@@ -140,8 +180,7 @@ pub fn solve_part2(input: &Input) -> u128 {
 
 #[test]
 fn test_day15_input1() {
-    let input =
-r#"Sensor at x=2, y=18: closest beacon is at x=-2, y=15
+    let input = r#"Sensor at x=2, y=18: closest beacon is at x=-2, y=15
 Sensor at x=9, y=16: closest beacon is at x=10, y=16
 Sensor at x=13, y=2: closest beacon is at x=15, y=3
 Sensor at x=12, y=14: closest beacon is at x=10, y=16

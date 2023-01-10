@@ -1,8 +1,11 @@
-use std::collections::{HashSet, HashMap};
+use std::collections::{HashMap, HashSet};
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
 pub enum Operation {
-    Add, Sub, Mul, Div,
+    Add,
+    Sub,
+    Mul,
+    Div,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Hash)]
@@ -11,7 +14,7 @@ pub struct MonkeyId(String);
 #[derive(Clone, PartialEq, Eq, Debug, Hash)]
 pub enum Yell {
     Specific(i64),
-    Result(MonkeyId, Operation, MonkeyId)
+    Result(MonkeyId, Operation, MonkeyId),
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Hash)]
@@ -36,9 +39,18 @@ impl MonkeyGraph {
 // topological sort of the graph
 pub fn sort_graph(graph: &MonkeyGraph) -> Vec<MonkeyId> {
     let mut graph: MonkeyGraph = graph.clone();
-    let dependents = graph.edges.iter().cloned().map(|(_, m)| m).collect::<HashSet<_>>();
+    let dependents = graph
+        .edges
+        .iter()
+        .cloned()
+        .map(|(_, m)| m)
+        .collect::<HashSet<_>>();
     // first find everything that doesn't depend on anything else - these can go first
-    let mut remaining_leaves = graph.vertices.difference(&dependents).cloned().collect::<HashSet<_>>();
+    let mut remaining_leaves = graph
+        .vertices
+        .difference(&dependents)
+        .cloned()
+        .collect::<HashSet<_>>();
     let mut sorted_nodes = vec![];
     loop {
         // nothing left to process
@@ -50,10 +62,14 @@ pub fn sort_graph(graph: &MonkeyGraph) -> Vec<MonkeyId> {
         let n = remaining_leaves.iter().next().unwrap().clone();
         remaining_leaves.remove(&n);
         sorted_nodes.push(n.clone());
-        
+
         // find what things depended on the node we just took
-        let edges_from_here = graph.edges
-            .iter().cloned().filter(|(m, _)| m == &n).collect::<HashSet<_>>();
+        let edges_from_here = graph
+            .edges
+            .iter()
+            .cloned()
+            .filter(|(m, _)| m == &n)
+            .collect::<HashSet<_>>();
 
         for (m1, m2) in edges_from_here {
             // for each of those: remove the edge from the graph
@@ -88,7 +104,7 @@ pub fn input_generator_part1(input: &str) -> Vec<Monkey> {
             vertices.insert(monkey_id.clone());
             lookup.insert(monkey_id, monkey);
         } else {
-            let mut components = operation.split(" ");
+            let mut components = operation.split(' ');
             let left_id = components.next().unwrap();
             let left_monkey = MonkeyId(left_id.to_owned());
             let operation = match components.next().unwrap() {
@@ -114,9 +130,11 @@ pub fn input_generator_part1(input: &str) -> Vec<Monkey> {
 
     let graph = MonkeyGraph { vertices, edges };
     let sorted_ids = sort_graph(&graph);
-    sorted_ids.into_iter().map(|id| lookup.get(&id).unwrap().clone()).collect()
+    sorted_ids
+        .into_iter()
+        .map(|id| lookup.get(&id).unwrap().clone())
+        .collect()
 }
-
 
 #[aoc(day21, part1)]
 pub fn solve_part1(input: &Vec<Monkey>) -> i64 {
@@ -124,15 +142,25 @@ pub fn solve_part1(input: &Vec<Monkey>) -> i64 {
     // input is already in order, so just go through and build the results
     for m in input {
         match &m.yell {
-            Yell::Specific(num) => { results.insert(m.id.clone(), *num); },
+            Yell::Specific(num) => {
+                results.insert(m.id.clone(), *num);
+            }
             Yell::Result(m1, op, m2) => {
                 let m1_result = *results.get(m1).unwrap();
                 let m2_result = *results.get(m2).unwrap();
                 match op {
-                    Operation::Add => { results.insert(m.id.clone(), m1_result + m2_result); },
-                    Operation::Sub => { results.insert(m.id.clone(), m1_result - m2_result); },
-                    Operation::Mul => { results.insert(m.id.clone(), m1_result * m2_result); },
-                    Operation::Div => { results.insert(m.id.clone(), m1_result / m2_result); },
+                    Operation::Add => {
+                        results.insert(m.id.clone(), m1_result + m2_result);
+                    }
+                    Operation::Sub => {
+                        results.insert(m.id.clone(), m1_result - m2_result);
+                    }
+                    Operation::Mul => {
+                        results.insert(m.id.clone(), m1_result * m2_result);
+                    }
+                    Operation::Div => {
+                        results.insert(m.id.clone(), m1_result / m2_result);
+                    }
                 }
             }
         }
@@ -153,16 +181,38 @@ pub fn solve_part2(input: &Vec<Monkey>) -> i64 {
             partial_results.insert(m.id.clone(), None);
         } else {
             match &m.yell {
-                Yell::Specific(num) => { partial_results.insert(m.id.clone(), Some(*num)); },
+                Yell::Specific(num) => {
+                    partial_results.insert(m.id.clone(), Some(*num));
+                }
                 Yell::Result(m1, op, m2) => {
                     let m1_result = *partial_results.get(m1).unwrap();
                     let m2_result = *partial_results.get(m2).unwrap();
                     match op {
                         // map the operation into the Options
-                        Operation::Add => { partial_results.insert(m.id.clone(), m1_result.and_then(|x| m2_result.map(|y| x + y))); },
-                        Operation::Sub => { partial_results.insert(m.id.clone(), m1_result.and_then(|x| m2_result.map(|y| x - y))); },
-                        Operation::Mul => { partial_results.insert(m.id.clone(), m1_result.and_then(|x| m2_result.map(|y| x * y))); },
-                        Operation::Div => { partial_results.insert(m.id.clone(), m1_result.and_then(|x| m2_result.map(|y| x / y))); },
+                        Operation::Add => {
+                            partial_results.insert(
+                                m.id.clone(),
+                                m1_result.and_then(|x| m2_result.map(|y| x + y)),
+                            );
+                        }
+                        Operation::Sub => {
+                            partial_results.insert(
+                                m.id.clone(),
+                                m1_result.and_then(|x| m2_result.map(|y| x - y)),
+                            );
+                        }
+                        Operation::Mul => {
+                            partial_results.insert(
+                                m.id.clone(),
+                                m1_result.and_then(|x| m2_result.map(|y| x * y)),
+                            );
+                        }
+                        Operation::Div => {
+                            partial_results.insert(
+                                m.id.clone(),
+                                m1_result.and_then(|x| m2_result.map(|y| x / y)),
+                            );
+                        }
                     }
                 }
             }
@@ -182,46 +232,66 @@ pub fn solve_part2(input: &Vec<Monkey>) -> i64 {
             let m2_result = *partial_results.get(&m2).unwrap();
             match (m1_result, m2_result) {
                 // the other number should be the same, so tell that monkey what its answer was supposed to be
-                (Some(num), None) => { partial_results.insert(m2, Some(num)); },
-                (None, Some(num)) => { partial_results.insert(m1, Some(num)); },
+                (Some(num), None) => {
+                    partial_results.insert(m2, Some(num));
+                }
+                (None, Some(num)) => {
+                    partial_results.insert(m1, Some(num));
+                }
                 _ => unreachable!(),
             }
         } else {
             // we must have reverse-calculated everything this far at least
-            let Some(m_result) = *partial_results.get(&m.id).unwrap() else { 
+            let Some(m_result) = *partial_results.get(&m.id).unwrap() else {
                 unreachable!()
             };
             match &m.yell {
-                Yell::Specific(_) => { 
+                Yell::Specific(_) => {
                     // nothing to do - monkey knows its number
-                },
+                }
                 Yell::Result(m1, op, m2) => {
                     let m1_result = *partial_results.get(m1).unwrap();
                     let m2_result = *partial_results.get(m2).unwrap();
                     match (m1_result, m2_result) {
                         (Some(_), Some(_)) => {
                             // both this monkey's dependents already know their answers - no need to do anything
-                        },
+                        }
                         (Some(num1), None) => {
                             // first monkey knows, but we don't know what the second monkey should have said
                             // figure it out from the answer and the first monkey, and then remember what
                             // it was supposed to calculate
                             match op {
-                                Operation::Add => { partial_results.insert(m2.clone(), Some(m_result - num1)); },
-                                Operation::Sub => { partial_results.insert(m2.clone(), Some(num1 - m_result)); },
-                                Operation::Mul => { partial_results.insert(m2.clone(), Some(m_result / num1)); },
-                                Operation::Div => { partial_results.insert(m2.clone(), Some(num1 / m_result)); },
+                                Operation::Add => {
+                                    partial_results.insert(m2.clone(), Some(m_result - num1));
+                                }
+                                Operation::Sub => {
+                                    partial_results.insert(m2.clone(), Some(num1 - m_result));
+                                }
+                                Operation::Mul => {
+                                    partial_results.insert(m2.clone(), Some(m_result / num1));
+                                }
+                                Operation::Div => {
+                                    partial_results.insert(m2.clone(), Some(num1 / m_result));
+                                }
                             }
-                        },
+                        }
                         (None, Some(num2)) => {
                             // same as above, but monkeys the other way round
                             match op {
-                                Operation::Add => { partial_results.insert(m1.clone(), Some(m_result - num2)); },
-                                Operation::Sub => { partial_results.insert(m1.clone(), Some(num2 + m_result)); },
-                                Operation::Mul => { partial_results.insert(m1.clone(), Some(m_result / num2)); },
-                                Operation::Div => { partial_results.insert(m1.clone(), Some(num2 * m_result)); },
+                                Operation::Add => {
+                                    partial_results.insert(m1.clone(), Some(m_result - num2));
+                                }
+                                Operation::Sub => {
+                                    partial_results.insert(m1.clone(), Some(num2 + m_result));
+                                }
+                                Operation::Mul => {
+                                    partial_results.insert(m1.clone(), Some(m_result / num2));
+                                }
+                                Operation::Div => {
+                                    partial_results.insert(m1.clone(), Some(num2 * m_result));
+                                }
                             }
-                        },
+                        }
                         // can't happen (human is only in one branch)
                         _ => unreachable!(),
                     }
@@ -236,8 +306,7 @@ pub fn solve_part2(input: &Vec<Monkey>) -> i64 {
 
 #[test]
 fn test_day21_input1() {
-    let input =
-r#"root: pppw + sjmn
+    let input = r#"root: pppw + sjmn
 dbpl: 5
 cczh: sllz + lgvd
 zczc: 2

@@ -1,11 +1,8 @@
-use std::cmp::Ordering;
 use nom::{
-    branch::alt,
-    bytes::complete::tag,
-    sequence::delimited,
-    multi::separated_list0,
-    IResult, combinator::map, character::complete::digit1, Finish,
+    branch::alt, bytes::complete::tag, character::complete::digit1, combinator::map,
+    multi::separated_list0, sequence::delimited, Finish, IResult,
 };
+use std::cmp::Ordering;
 
 #[derive(Clone, PartialEq, Eq)]
 pub enum Value {
@@ -18,8 +15,12 @@ impl PartialOrd for Value {
         match (self, other) {
             (Value::Integer(is), Value::Integer(io)) => is.partial_cmp(io),
             (Value::List(ls), Value::List(lo)) => ls.partial_cmp(lo),
-            (left @ Value::List(_), Value::Integer(io)) => left.partial_cmp(&Value::List(vec![Value::Integer(*io)])),
-            (Value::Integer(is), right @ Value::List(_)) => Value::List(vec![Value::Integer(*is)]).partial_cmp(right),
+            (left @ Value::List(_), Value::Integer(io)) => {
+                left.partial_cmp(&Value::List(vec![Value::Integer(*io)]))
+            }
+            (Value::Integer(is), right @ Value::List(_)) => {
+                Value::List(vec![Value::Integer(*is)]).partial_cmp(right)
+            }
         }
     }
 }
@@ -38,43 +39,66 @@ fn parse_value(input: &str) -> IResult<&str, Value> {
 
 #[aoc_generator(day13, part1)]
 pub fn input_generator_part1(input: &str) -> Vec<(Value, Value)> {
-    input.split("\n\n").map(|p| {
-        let (first, second) = p.split_once("\n").unwrap();
-        (parse_value(first).finish().unwrap().1, parse_value(second).finish().unwrap().1)
-    }).collect()
+    input
+        .split("\n\n")
+        .map(|p| {
+            let (first, second) = p.split_once('\n').unwrap();
+            (
+                parse_value(first).finish().unwrap().1,
+                parse_value(second).finish().unwrap().1,
+            )
+        })
+        .collect()
 }
 
 #[aoc_generator(day13, part2)]
 pub fn input_generator_part2(input: &str) -> Vec<Value> {
-    input.lines().filter(|l| !l.is_empty()).map(|l| parse_value(l).finish().unwrap().1).collect()
+    input
+        .lines()
+        .filter(|l| !l.is_empty())
+        .map(|l| parse_value(l).finish().unwrap().1)
+        .collect()
 }
 
 #[aoc(day13, part1)]
-pub fn solve_part1(input: &Vec<(Value, Value)>) -> usize {
-    input.iter().enumerate()
+pub fn solve_part1(input: &[(Value, Value)]) -> usize {
+    input
+        .iter()
+        .enumerate()
         .filter(|(_, (first, second))| first.cmp(second) == Ordering::Less)
         .map(|(index, _)| index + 1)
         .sum()
 }
 
 #[aoc(day13, part2)]
-pub fn solve_part2(input: &Vec<Value>) -> usize {
+pub fn solve_part2(input: &[Value]) -> usize {
     let divider_1 = Value::List(vec![Value::List(vec![Value::Integer(2)])]);
     let divider_2 = Value::List(vec![Value::List(vec![Value::Integer(6)])]);
-    let mut input = input.clone();
+    let mut input = input.to_owned();
     // include those packets and sort
     input.push(divider_1.clone());
     input.push(divider_2.clone());
     input.sort();
-    let index_1 = input.iter().cloned().enumerate().find(|(_, d)| *d == divider_1).unwrap().0;
-    let index_2 = input.iter().cloned().enumerate().find(|(_, d)| *d == divider_2).unwrap().0;
+    let index_1 = input
+        .iter()
+        .cloned()
+        .enumerate()
+        .find(|(_, d)| *d == divider_1)
+        .unwrap()
+        .0;
+    let index_2 = input
+        .iter()
+        .cloned()
+        .enumerate()
+        .find(|(_, d)| *d == divider_2)
+        .unwrap()
+        .0;
     (index_1 + 1) * (index_2 + 1)
 }
 
 #[test]
 fn test_day13_input1() {
-    let input =
-r#"[1,1,3,1,1]
+    let input = r#"[1,1,3,1,1]
 [1,1,5,1,1]
 
 [[1],[2,3,4]]

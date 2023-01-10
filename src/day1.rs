@@ -1,5 +1,5 @@
 pub struct Elf {
-    pub calories: Vec<u32>
+    pub calories: Vec<u32>,
 }
 
 impl Elf {
@@ -13,8 +13,10 @@ pub fn input_generator(input: &str) -> Vec<Elf> {
     let mut elves = Vec::new();
     let mut current_elf = Vec::new();
     for l in input.lines() {
-        if l == "" {
-            elves.push(Elf { calories: current_elf });
+        if l.is_empty() {
+            elves.push(Elf {
+                calories: current_elf,
+            });
             current_elf = Vec::new();
         }
 

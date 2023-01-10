@@ -2,7 +2,7 @@
 pub enum Play {
     Rock,
     Paper,
-    Scissors
+    Scissors,
 }
 
 impl Play {
@@ -19,7 +19,7 @@ impl Play {
 pub enum Outcome {
     Win,
     Lose,
-    Draw
+    Draw,
 }
 
 impl Outcome {
@@ -40,9 +40,15 @@ pub struct Game {
 impl Game {
     pub fn outcome(&self) -> Outcome {
         match (self.me, self.opponent) {
-            (Play::Rock, Play::Scissors) | (Play::Scissors, Play::Paper) | (Play::Paper, Play::Rock) => Outcome::Win,
-            (Play::Rock, Play::Rock) | (Play::Scissors, Play::Scissors) | (Play::Paper, Play::Paper) => Outcome::Draw,
-            (Play::Rock, Play::Paper) | (Play::Scissors, Play::Rock) | (Play::Paper, Play::Scissors) => Outcome::Lose,
+            (Play::Rock, Play::Scissors)
+            | (Play::Scissors, Play::Paper)
+            | (Play::Paper, Play::Rock) => Outcome::Win,
+            (Play::Rock, Play::Rock)
+            | (Play::Scissors, Play::Scissors)
+            | (Play::Paper, Play::Paper) => Outcome::Draw,
+            (Play::Rock, Play::Paper)
+            | (Play::Scissors, Play::Rock)
+            | (Play::Paper, Play::Scissors) => Outcome::Lose,
         }
     }
 
@@ -69,7 +75,7 @@ impl Strategy {
                 Play::Rock => Play::Scissors,
                 Play::Paper => Play::Rock,
                 Play::Scissors => Play::Paper,
-            }
+            },
         }
     }
 }
@@ -103,24 +109,36 @@ pub fn convert_outcome(play: char) -> Outcome {
 
 #[aoc_generator(day2, part1)]
 pub fn input_generator_part1(input: &str) -> Vec<Game> {
-    input.lines().map(|l| {
-        let mut chars = l.chars();
-        let opp = chars.next().unwrap();
-        chars.next().unwrap();
-        let m = chars.next().unwrap();
-        Game { opponent: convert_opponent(opp), me: convert_mine(m) }
-    }).collect()
+    input
+        .lines()
+        .map(|l| {
+            let mut chars = l.chars();
+            let opp = chars.next().unwrap();
+            chars.next().unwrap();
+            let m = chars.next().unwrap();
+            Game {
+                opponent: convert_opponent(opp),
+                me: convert_mine(m),
+            }
+        })
+        .collect()
 }
 
 #[aoc_generator(day2, part2)]
 pub fn input_generator_part2(input: &str) -> Vec<Strategy> {
-    input.lines().map(|l| {
-        let mut chars = l.chars();
-        let opp = chars.next().unwrap();
-        chars.next().unwrap();
-        let o = chars.next().unwrap();
-        Strategy { opponent: convert_opponent(opp), desired_outcome: convert_outcome(o) }
-    }).collect()
+    input
+        .lines()
+        .map(|l| {
+            let mut chars = l.chars();
+            let opp = chars.next().unwrap();
+            chars.next().unwrap();
+            let o = chars.next().unwrap();
+            Strategy {
+                opponent: convert_opponent(opp),
+                desired_outcome: convert_outcome(o),
+            }
+        })
+        .collect()
 }
 
 #[aoc(day2, part1)]
@@ -130,5 +148,14 @@ pub fn solve_part1(input: &[Game]) -> u32 {
 
 #[aoc(day2, part2)]
 pub fn solve_part2(input: &[Strategy]) -> u32 {
-    input.iter().map(|s| Game { opponent: s.opponent, me: s.choose_play() }.score()).sum()
+    input
+        .iter()
+        .map(|s| {
+            Game {
+                opponent: s.opponent,
+                me: s.choose_play(),
+            }
+            .score()
+        })
+        .sum()
 }

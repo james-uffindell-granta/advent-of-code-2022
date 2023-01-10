@@ -1,9 +1,8 @@
 use std::iter::Sum;
-use std::{str::FromStr, ops::Add};
+use std::{ops::Add, str::FromStr};
 
-use itertools::Itertools;
 use itertools::EitherOrBoth;
-
+use itertools::Itertools;
 
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Digit {
@@ -23,16 +22,22 @@ impl Add for Digit {
             (Digit::Zero, d) | (d, Digit::Zero) => (d, Digit::Zero),
             // adding these to each other cancels
             (Digit::One, Digit::Minus) | (Digit::Minus, Digit::One) => (Digit::Zero, Digit::Zero),
-            (Digit::Two, Digit::DoubleMinus) | (Digit::DoubleMinus, Digit::Two) => (Digit::Zero, Digit::Zero),
+            (Digit::Two, Digit::DoubleMinus) | (Digit::DoubleMinus, Digit::Two) => {
+                (Digit::Zero, Digit::Zero)
+            }
             // these part-cancel
-            (Digit::One, Digit::DoubleMinus) | (Digit::DoubleMinus, Digit::One) => (Digit::Minus, Digit::Zero),
+            (Digit::One, Digit::DoubleMinus) | (Digit::DoubleMinus, Digit::One) => {
+                (Digit::Minus, Digit::Zero)
+            }
             (Digit::Two, Digit::Minus) | (Digit::Minus, Digit::Two) => (Digit::One, Digit::Zero),
             // these combine but don't overflow
             (Digit::One, Digit::One) => (Digit::Two, Digit::Zero),
             (Digit::Minus, Digit::Minus) => (Digit::DoubleMinus, Digit::Zero),
             // these overflow and give a carry
             (Digit::One, Digit::Two) | (Digit::Two, Digit::One) => (Digit::DoubleMinus, Digit::One),
-            (Digit::Minus, Digit::DoubleMinus) | (Digit::DoubleMinus, Digit::Minus) => (Digit::Two, Digit::Minus),
+            (Digit::Minus, Digit::DoubleMinus) | (Digit::DoubleMinus, Digit::Minus) => {
+                (Digit::Two, Digit::Minus)
+            }
             (Digit::Two, Digit::Two) => (Digit::Minus, Digit::One),
             (Digit::DoubleMinus, Digit::DoubleMinus) => (Digit::One, Digit::Minus),
         }
@@ -76,7 +81,9 @@ impl Add for SnafuNumber {
 
 impl Sum for SnafuNumber {
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
-        let mut result = Self { digits: vec![Digit::Zero] };
+        let mut result = Self {
+            digits: vec![Digit::Zero],
+        };
         for n in iter {
             result = result + n;
         }
@@ -112,10 +119,10 @@ impl FromStr for SnafuNumber {
                 '0' => Digit::Zero,
                 '-' => Digit::Minus,
                 '=' => Digit::DoubleMinus,
-                _ => unreachable!()
+                _ => unreachable!(),
             });
         }
-        Ok(Self {digits })
+        Ok(Self { digits })
     }
 }
 
@@ -126,22 +133,19 @@ pub fn input_generator_part1(input: &str) -> Vec<SnafuNumber> {
     input.lines().map(|l| l.parse().unwrap()).collect()
 }
 
-
 #[aoc(day25, part1)]
-pub fn solve_part1(input: &Vec<SnafuNumber>) -> String {
+pub fn solve_part1(input: &[SnafuNumber]) -> String {
     input.iter().cloned().sum::<SnafuNumber>().to_string()
 }
 
-
 #[aoc(day25, part2)]
-pub fn solve_part2(_input: &Vec<SnafuNumber>) -> usize {
+pub fn solve_part2(_input: &[SnafuNumber]) -> usize {
     0
 }
 
 #[test]
 fn test_day25_input1() {
-    let input =
-r#"1=-0-2
+    let input = r#"1=-0-2
 12111
 2=0=
 21

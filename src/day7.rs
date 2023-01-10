@@ -8,21 +8,34 @@ pub struct Directory {
 
 impl Directory {
     pub fn new() -> Self {
-        Self { size_of_files: 0, subdirectory_names: Vec::new() }
+        Self {
+            size_of_files: 0,
+            subdirectory_names: Vec::new(),
+        }
     }
 
-    pub fn total_size(&self, directory_tree:  &HashMap<String, Directory>) -> usize {
-        self.subdirectory_names.iter().map(|d| directory_tree.get(d).unwrap().total_size(&directory_tree)).sum::<usize>() + self.size_of_files
+    pub fn total_size(&self, directory_tree: &HashMap<String, Directory>) -> usize {
+        self.subdirectory_names
+            .iter()
+            .map(|d| directory_tree.get(d).unwrap().total_size(directory_tree))
+            .sum::<usize>()
+            + self.size_of_files
+    }
+}
+
+impl Default for Directory {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
 #[aoc_generator(day7)]
 pub fn input_generator_part1(input: &str) -> HashMap<String, usize> {
-    let mut directories: HashMap<String, Directory> = HashMap::from([(String::from(""), Directory::new())]);
+    let mut directories: HashMap<String, Directory> =
+        HashMap::from([(String::from(""), Directory::new())]);
     // the current directory we're in - use "" for the root, instead of "/", to avoid concatenation weirdness
     let mut current_path = String::from("");
-    let mut lines = input.lines();
-    while let Some(line) = lines.next() {
+    for line in input.lines() {
         if line == "$ ls" {
             continue;
         }
@@ -30,7 +43,7 @@ pub fn input_generator_part1(input: &str) -> HashMap<String, usize> {
         if let Some(new_location) = line.strip_prefix("$ cd ") {
             if new_location == ".." {
                 // up a directory - pop off the last path component
-                let (new_path, _) = current_path.rsplit_once("/").unwrap();
+                let (new_path, _) = current_path.rsplit_once('/').unwrap();
                 current_path = new_path.to_owned();
             } else if new_location == "/" {
                 // back to the root - replace everything
@@ -38,17 +51,21 @@ pub fn input_generator_part1(input: &str) -> HashMap<String, usize> {
             } else {
                 current_path = current_path + "/" + new_location;
                 // remember that we've visited this directory, if we haven't seen it before
-                directories.entry(current_path.clone()).or_insert(Directory::new());
+                directories
+                    .entry(current_path.clone())
+                    .or_insert(Directory::new());
             }
             continue;
         }
 
         // otherwise this is the output from ls
-        if let Some((left, right)) = line.split_once(" ") {
+        if let Some((left, right)) = line.split_once(' ') {
             let mut current_directory = directories.get_mut(&current_path).unwrap();
             if left == "dir" {
                 // this directory has a subdirectory - remember the (full) path of it
-                current_directory.subdirectory_names.push(current_path.clone() + "/" + right);
+                current_directory
+                    .subdirectory_names
+                    .push(current_path.clone() + "/" + right);
             } else {
                 // this directory contains a file - add its size to the running total for this dir
                 current_directory.size_of_files += left.parse::<usize>().unwrap();
@@ -56,7 +73,10 @@ pub fn input_generator_part1(input: &str) -> HashMap<String, usize> {
         }
     }
 
-    directories.iter().map(|(name, d)| (name.clone(), d.total_size(&directories))).collect()
+    directories
+        .iter()
+        .map(|(name, d)| (name.clone(), d.total_size(&directories)))
+        .collect()
 }
 
 #[aoc(day7, part1)]
@@ -69,13 +89,16 @@ pub fn solve_part2(input: &HashMap<String, usize>) -> usize {
     let root_directory_size = input.get("").unwrap();
     let already_free_size = 70_000_000 - root_directory_size;
     let extra_space_needed = 30_000_000 - already_free_size;
-    *input.values().filter(|&v| v >= &extra_space_needed).min().unwrap()
+    *input
+        .values()
+        .filter(|&v| v >= &extra_space_needed)
+        .min()
+        .unwrap()
 }
 
 #[test]
 fn test_input_parsing() {
-    let input =
-r#"
+    let input = r#"
 $ cd /
 $ ls
 dir a
@@ -109,5 +132,4 @@ $ ls
     let dir_to_delete = solve_part2(&parsed_input);
 
     assert_eq!(dir_to_delete, 24_933_642);
-
 }

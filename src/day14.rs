@@ -1,7 +1,7 @@
-use std::collections::HashMap;
-use std::cmp::{min, max};
-use std::fmt::Display;
 use itertools::Itertools;
+use std::cmp::{max, min};
+use std::collections::HashMap;
+use std::fmt::Display;
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum Tile {
@@ -30,10 +30,20 @@ impl Coord {
     pub fn next_moves(&self) -> Vec<Coord> {
         let new_y = self.y + 1;
         // first straight down, then left, then right
-        vec![Coord { x: self.x, y: new_y },
-             Coord { x: self.x - 1, y: new_y },
-             Coord { x: self.x + 1, y: new_y },
-             ]
+        vec![
+            Coord {
+                x: self.x,
+                y: new_y,
+            },
+            Coord {
+                x: self.x - 1,
+                y: new_y,
+            },
+            Coord {
+                x: self.x + 1,
+                y: new_y,
+            },
+        ]
     }
 }
 
@@ -52,13 +62,17 @@ pub struct Bounds {
 
 impl Bounds {
     pub fn unbounded() -> Self {
-        Self { left: None, right: None, bottom: None }
+        Self {
+            left: None,
+            right: None,
+            bottom: None,
+        }
     }
 
     pub fn within_bounds(&self, c: &Coord) -> bool {
         self.left.map(|l| c.x >= l).unwrap_or(true)
-        && self.right.map(|r| c.x <= r).unwrap_or(true)
-        && self.bottom.map(|b| c.y <= b).unwrap_or(true)
+            && self.right.map(|r| c.x <= r).unwrap_or(true)
+            && self.bottom.map(|b| c.y <= b).unwrap_or(true)
     }
 }
 
@@ -86,7 +100,11 @@ impl Cave {
     }
 
     pub fn bounds(&self) -> Bounds {
-        Bounds { left: Some(self.left), right: Some(self.right), bottom: Some(self.bottom) }
+        Bounds {
+            left: Some(self.left),
+            right: Some(self.right),
+            bottom: Some(self.bottom),
+        }
     }
 
     pub fn drop_sand(&mut self, bounds: &Bounds) -> Option<()> {
@@ -98,10 +116,11 @@ impl Cave {
 
         let mut last_movement = Move::MovedTo(sand_start);
         while let Move::MovedTo(position) = last_movement {
-            let new_position = position.next_moves()
-                .into_iter().map(|c| (c, self.get_with_floor(&c).unwrap_or(&Tile::Vacant)))
-                .filter(|(_, &t)| matches!(t, Tile::Vacant))
-                .next();
+            let new_position = position
+                .next_moves()
+                .into_iter()
+                .map(|c| (c, self.get_with_floor(&c).unwrap_or(&Tile::Vacant)))
+                .find(|(_, &t)| matches!(t, Tile::Vacant));
             match new_position {
                 Some((c, _)) => {
                     // sand wants to move to this coord
@@ -111,8 +130,8 @@ impl Cave {
                         // things that go out of bounds vanish
                         last_movement = Move::FellOff
                     }
-                },
-                None => last_movement = Move::AtRest(position)
+                }
+                None => last_movement = Move::AtRest(position),
             }
         }
 
@@ -121,8 +140,8 @@ impl Cave {
             Move::AtRest(position) => {
                 self.map.insert(position, Tile::Sand);
                 Some(())
-            },
-            _ => unreachable!()
+            }
+            _ => unreachable!(),
         }
     }
 }
@@ -139,13 +158,16 @@ impl Display for Cave {
                 if row == 0 && col == 500 {
                     write!(f, "+")?;
                 } else {
-                    let tile = self.map.get(&Coord { x: col, y: row }).unwrap_or(&Tile::Vacant);
+                    let tile = self
+                        .map
+                        .get(&Coord { x: col, y: row })
+                        .unwrap_or(&Tile::Vacant);
                     tile.fmt(f)?;
                 }
             }
-            write!(f, "\n")?;
+            writeln!(f)?;
         }
-        write!(f, "\n")
+        writeln!(f)
     }
 }
 
@@ -155,8 +177,11 @@ pub fn input_generator_part1(input: &str) -> Cave {
     for l in input.lines() {
         let corners = l.split(" -> ");
         let coords = corners.map(|c| {
-            let (x, y) = c.split_once(",").unwrap();
-            Coord { x: x.parse().unwrap(), y: y.parse().unwrap() }
+            let (x, y) = c.split_once(',').unwrap();
+            Coord {
+                x: x.parse().unwrap(),
+                y: y.parse().unwrap(),
+            }
         });
         for (first, second) in coords.tuple_windows() {
             if first.y == second.y {
@@ -167,7 +192,7 @@ pub fn input_generator_part1(input: &str) -> Cave {
             } else if first.x == second.x {
                 // moving up or down
                 for y in min(first.y, second.y)..=max(first.y, second.y) {
-                    map.insert(Coord { x: first.x, y}, Tile::Rock);
+                    map.insert(Coord { x: first.x, y }, Tile::Rock);
                 }
             } else {
                 // bad input?
@@ -181,14 +206,19 @@ pub fn input_generator_part1(input: &str) -> Cave {
     let left = map.keys().map(|c| c.x).min().unwrap();
     let right = map.keys().map(|c| c.x).max().unwrap();
 
-    Cave { map, bottom, left, right }
+    Cave {
+        map,
+        bottom,
+        left,
+        right,
+    }
 }
 
 #[aoc(day14, part1)]
 pub fn solve_part1(input: &Cave) -> usize {
     let mut cave = input.clone();
     let mut counter = 0;
-    while let Some(_) = cave.drop_sand(&cave.bounds()) {
+    while cave.drop_sand(&cave.bounds()).is_some() {
         counter += 1;
     }
 
@@ -199,7 +229,7 @@ pub fn solve_part1(input: &Cave) -> usize {
 pub fn solve_part2(input: &Cave) -> usize {
     let mut cave = input.clone();
     let mut counter = 0;
-    while let Some(_) = cave.drop_sand(&Bounds::unbounded()) {
+    while cave.drop_sand(&Bounds::unbounded()).is_some() {
         counter += 1;
     }
 
@@ -208,8 +238,7 @@ pub fn solve_part2(input: &Cave) -> usize {
 
 #[test]
 fn test_day14_input1() {
-    let input =
-r#"498,4 -> 498,6 -> 496,6
+    let input = r#"498,4 -> 498,6 -> 496,6
 503,4 -> 502,4 -> 502,9 -> 494,9
 "#;
 

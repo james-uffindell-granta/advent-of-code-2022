@@ -1,6 +1,12 @@
 use std::collections::BTreeMap;
 
-use nom::{combinator::{value, map}, character::{streaming::char, complete::digit1}, IResult, branch::alt, multi::many0};
+use nom::{
+    branch::alt,
+    character::{complete::digit1, streaming::char},
+    combinator::{map, value},
+    multi::many0,
+    IResult,
+};
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash, PartialOrd, Ord)]
 pub struct Coord {
@@ -40,7 +46,7 @@ impl Facing {
         match self {
             Facing::Up => Facing::Right,
             Facing::Right => Facing::Down,
-            Facing::Down => Facing::Left, 
+            Facing::Down => Facing::Left,
             Facing::Left => Facing::Up,
         }
     }
@@ -49,7 +55,7 @@ impl Facing {
         match self {
             Facing::Up => Facing::Left,
             Facing::Left => Facing::Down,
-            Facing::Down => Facing::Right, 
+            Facing::Down => Facing::Right,
             Facing::Right => Facing::Up,
         }
     }
@@ -66,7 +72,7 @@ impl Facing {
 
 pub struct Input {
     map: BTreeMap<Coord, Cell>,
-    movements: Vec<Movement>
+    movements: Vec<Movement>,
 }
 
 impl std::fmt::Display for Input {
@@ -81,13 +87,13 @@ impl std::fmt::Display for Input {
                 if let Some(cell) = self.map.get(&(col, row).into()) {
                     match cell {
                         Cell::Vacant => write!(f, ".")?,
-                        Cell::Wall => write!(f, "#")?
+                        Cell::Wall => write!(f, "#")?,
                     }
                 } else {
                     write!(f, " ")?;
                 }
             }
-            write!(f, "\n")?;
+            writeln!(f)?;
         }
 
         Ok(())
@@ -95,7 +101,11 @@ impl std::fmt::Display for Input {
 }
 
 pub fn trace_path(map: &BTreeMap<Coord, Cell>, movements: &Vec<Movement>) -> (Coord, Facing) {
-    let start = *map.keys().filter(|&c| c.y == 1).min_by_key(|c| c.x).unwrap();
+    let start = *map
+        .keys()
+        .filter(|&c| c.y == 1)
+        .min_by_key(|c| c.x)
+        .unwrap();
     let mut current_coord = start;
     let mut current_facing = Facing::Right;
     for movement in movements {
@@ -115,7 +125,7 @@ pub fn trace_path(map: &BTreeMap<Coord, Cell>, movements: &Vec<Movement>) -> (Co
                             Cell::Vacant => {
                                 current_coord = next_theoretical_coord;
                                 continue 'moving;
-                            },
+                            }
                             Cell::Wall => {
                                 break 'moving;
                             }
@@ -125,42 +135,56 @@ pub fn trace_path(map: &BTreeMap<Coord, Cell>, movements: &Vec<Movement>) -> (Co
                         let next_coord = match current_facing {
                             Facing::Up => {
                                 // we went up off the top - go round to the bottom
-                                let next_real_y = map.keys()
+                                let next_real_y = map
+                                    .keys()
                                     .filter(|&c| c.x == current_coord.x)
-                                    .map(|c| c.y).max().unwrap();
+                                    .map(|c| c.y)
+                                    .max()
+                                    .unwrap();
                                 (current_coord.x, next_real_y).into()
-                            },
+                            }
                             Facing::Right => {
-                                let next_real_x = map.keys()
+                                let next_real_x = map
+                                    .keys()
                                     .filter(|&c| c.y == current_coord.y)
-                                    .map(|c| c.x).min().unwrap();
+                                    .map(|c| c.x)
+                                    .min()
+                                    .unwrap();
                                 (next_real_x, current_coord.y).into()
-                            },
+                            }
                             Facing::Down => {
-                                let next_real_y = map.keys()
+                                let next_real_y = map
+                                    .keys()
                                     .filter(|&c| c.x == current_coord.x)
-                                    .map(|c| c.y).min().unwrap();
+                                    .map(|c| c.y)
+                                    .min()
+                                    .unwrap();
                                 (current_coord.x, next_real_y).into()
-                            },
+                            }
                             Facing::Left => {
-                                let next_real_x = map.keys()
+                                let next_real_x = map
+                                    .keys()
                                     .filter(|&c| c.y == current_coord.y)
-                                    .map(|c| c.x).max().unwrap();
+                                    .map(|c| c.x)
+                                    .max()
+                                    .unwrap();
                                 (next_real_x, current_coord.y).into()
-                            },
+                            }
                         };
-                        
+
                         if let Some(actual_cell) = map.get(&next_coord) {
                             match actual_cell {
                                 Cell::Vacant => {
                                     current_coord = next_coord;
                                     continue 'moving;
-                                },
+                                }
                                 Cell::Wall => {
                                     break 'moving;
                                 }
                             }
-                        } else { unreachable!() }
+                        } else {
+                            unreachable!()
+                        }
                     }
                 }
             }
@@ -194,8 +218,15 @@ pub fn on_f(coord: &Coord) -> bool {
     coord.x >= 1 && coord.x <= 50 && coord.y >= 151 && coord.y <= 200
 }
 
-pub fn trace_path_on_cube(map: &BTreeMap<Coord, Cell>, movements: &Vec<Movement>) -> (Coord, Facing) {
-    let start = *map.keys().filter(|&c| c.y == 1).min_by_key(|&c| c.x).unwrap();
+pub fn trace_path_on_cube(
+    map: &BTreeMap<Coord, Cell>,
+    movements: &Vec<Movement>,
+) -> (Coord, Facing) {
+    let start = *map
+        .keys()
+        .filter(|&c| c.y == 1)
+        .min_by_key(|&c| c.x)
+        .unwrap();
     let mut current_coord = start;
     let mut current_facing = Facing::Right;
     for movement in movements {
@@ -215,7 +246,7 @@ pub fn trace_path_on_cube(map: &BTreeMap<Coord, Cell>, movements: &Vec<Movement>
                             Cell::Vacant => {
                                 current_coord = next_theoretical_coord;
                                 continue 'moving;
-                            },
+                            }
                             Cell::Wall => {
                                 break 'moving;
                             }
@@ -230,7 +261,7 @@ pub fn trace_path_on_cube(map: &BTreeMap<Coord, Cell>, movements: &Vec<Movement>
                         //  F
                         let (next_coord, next_facing) = match current_facing {
                             Facing::Up => {
-                                // three possibilities 
+                                // three possibilities
                                 // going up off the top of D - we end up on the left side
                                 // of C
                                 if on_d(&current_coord) {
@@ -258,7 +289,7 @@ pub fn trace_path_on_cube(map: &BTreeMap<Coord, Cell>, movements: &Vec<Movement>
                                 } else {
                                     unreachable!();
                                 }
-                            },
+                            }
                             Facing::Right => {
                                 if on_b(&current_coord) {
                                     // gone off the right of B - we end up on the right of E
@@ -297,7 +328,7 @@ pub fn trace_path_on_cube(map: &BTreeMap<Coord, Cell>, movements: &Vec<Movement>
                                 } else {
                                     unreachable!();
                                 }
-                            },
+                            }
                             Facing::Down => {
                                 if on_f(&current_coord) {
                                     // gone off the bottom of F - we come in on the top of B
@@ -326,7 +357,7 @@ pub fn trace_path_on_cube(map: &BTreeMap<Coord, Cell>, movements: &Vec<Movement>
                                 } else {
                                     unreachable!();
                                 }
-                            },
+                            }
                             Facing::Left => {
                                 if on_a(&current_coord) {
                                     // gone off the left of A - we end up on the left of D
@@ -365,21 +396,23 @@ pub fn trace_path_on_cube(map: &BTreeMap<Coord, Cell>, movements: &Vec<Movement>
                                 } else {
                                     unreachable!();
                                 }
-                            },
+                            }
                         };
-                        
+
                         if let Some(actual_cell) = map.get(&next_coord) {
                             match actual_cell {
                                 Cell::Vacant => {
                                     current_coord = next_coord;
                                     current_facing = next_facing;
                                     continue 'moving;
-                                },
+                                }
                                 Cell::Wall => {
                                     break 'moving;
                                 }
                             }
-                        } else { unreachable!() }
+                        } else {
+                            unreachable!()
+                        }
                     }
                 }
             }
@@ -405,17 +438,19 @@ pub fn input_generator_part1(input: &str) -> Input {
         }
     }
 
-    let movements = parse_movements(&(movements_input.to_owned() + "\n")).unwrap().1;
+    let movements = parse_movements(&(movements_input.to_owned() + "\n"))
+        .unwrap()
+        .1;
 
     Input { map, movements }
 }
 
 fn parse_movements(input: &str) -> IResult<&str, Vec<Movement>> {
     let parse_int = map(digit1, |x: &str| x.parse::<usize>().unwrap());
-    let parse_move = alt(
-        (map(parse_int, Movement::MoveForward),
+    let parse_move = alt((
+        map(parse_int, Movement::MoveForward),
         value(Movement::TurnLeft, char('L')),
-        value(Movement::TurnRight, char('R'))
+        value(Movement::TurnRight, char('R')),
     ));
     many0(parse_move)(input)
 }
@@ -423,21 +458,20 @@ fn parse_movements(input: &str) -> IResult<&str, Vec<Movement>> {
 #[aoc(day22, part1)]
 pub fn solve_part1(input: &Input) -> usize {
     let (coord, facing) = trace_path(&input.map, &input.movements);
-    println!("Ended up at {:?}, facing {:?}", coord, facing);
+    println!("Ended up at {coord:?}, facing {facing:?}");
     (1000 * coord.y) + (4 * coord.x) + facing.score()
 }
 
 #[aoc(day22, part2)]
 pub fn solve_part2(input: &Input) -> usize {
     let (coord, facing) = trace_path_on_cube(&input.map, &input.movements);
-    println!("Ended up at {:?}, facing {:?}", coord, facing);
+    println!("Ended up at {coord:?}, facing {facing:?}");
     (1000 * coord.y) + (4 * coord.x) + facing.score()
 }
 
 #[test]
 fn test_day22_input1() {
-    let input =
-r#"        ...#
+    let input = r#"        ...#
         .#..
         #...
         ....

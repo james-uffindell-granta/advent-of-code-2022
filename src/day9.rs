@@ -4,7 +4,7 @@ pub enum Direction {
     Up,
     Down,
     Right,
-    Left
+    Left,
 }
 
 impl From<&str> for Direction {
@@ -15,7 +15,7 @@ impl From<&str> for Direction {
             "L" => Direction::Left,
             "R" => Direction::Right,
             _ => unreachable!(),
-        } 
+        }
     }
 }
 
@@ -33,26 +33,37 @@ pub fn move_one((start_x, start_y): (i32, i32), direction: &Direction) -> (i32, 
     }
 }
 
-pub fn find_new_tail(tail @ (tail_x, tail_y): (i32, i32), (head_x, head_y): (i32, i32)) -> (i32, i32) {
+pub fn find_new_tail(
+    tail @ (tail_x, tail_y): (i32, i32),
+    (head_x, head_y): (i32, i32),
+) -> (i32, i32) {
     let x_distance_moved = (tail_x - head_x).abs();
     let y_distance_moved = (tail_y - head_y).abs();
     // if the head is at most one away, the tail doesn't move
     if x_distance_moved <= 1 && y_distance_moved <= 1 {
-        return tail
+        return tail;
     }
 
     match (x_distance_moved, y_distance_moved) {
         // moved diagonally - move both components 1 in the right direction
         (2, 2) => {
-            let new_tail_x = if tail_x < head_x { tail_x + 1 } else { tail_x - 1 };
-            let new_tail_y = if tail_y < head_y { tail_y + 1 } else { tail_y - 1 };
+            let new_tail_x = if tail_x < head_x {
+                tail_x + 1
+            } else {
+                tail_x - 1
+            };
+            let new_tail_y = if tail_y < head_y {
+                tail_y + 1
+            } else {
+                tail_y - 1
+            };
             (new_tail_x, new_tail_y)
-        },
+        }
         // only one dimension has moved 2 - tail moves one in that direction; the other dimension ends up the same as where the head has gone
-        (2, 0|1) if tail_x < head_x => (tail_x + 1, head_y),
-        (2, 0|1) if tail_x > head_x => (tail_x - 1, head_y),
-        (0|1, 2) if tail_y < head_y => (head_x, tail_y + 1),
-        (0|1, 2) if tail_y > head_y => (head_x, tail_y - 1),
+        (2, 0 | 1) if tail_x < head_x => (tail_x + 1, head_y),
+        (2, 0 | 1) if tail_x > head_x => (tail_x - 1, head_y),
+        (0 | 1, 2) if tail_y < head_y => (head_x, tail_y + 1),
+        (0 | 1, 2) if tail_y > head_y => (head_x, tail_y - 1),
         // the previous knot can never have moved more than 2
         // and we handled the cases <2 higher up
         _ => unreachable!(),
@@ -61,12 +72,15 @@ pub fn find_new_tail(tail @ (tail_x, tail_y): (i32, i32), (head_x, head_y): (i32
 
 #[aoc_generator(day9)]
 pub fn input_generator_part1(input: &str) -> Vec<Instruction> {
-    input.lines().map(|l| {
-        let (direction, amount) = l.split_once(' ').unwrap();
-        let amount = amount.parse::<i32>().unwrap();
-        let direction = direction.into();
-        Instruction { direction, amount }
-    }).collect()
+    input
+        .lines()
+        .map(|l| {
+            let (direction, amount) = l.split_once(' ').unwrap();
+            let amount = amount.parse::<i32>().unwrap();
+            let direction = direction.into();
+            Instruction { direction, amount }
+        })
+        .collect()
 }
 
 #[aoc(day9, part1)]
@@ -86,7 +100,6 @@ pub fn solve_part1(input: &Vec<Instruction>) -> usize {
 
     visited_positions.len()
 }
-
 
 #[aoc(day9, part2)]
 pub fn solve_part2(input: &Vec<Instruction>) -> usize {
@@ -114,8 +127,7 @@ pub fn solve_part2(input: &Vec<Instruction>) -> usize {
 
 #[test]
 fn test_day9() {
-    let input =
-r#"R 4
+    let input = r#"R 4
 U 4
 L 3
 D 1
@@ -135,8 +147,7 @@ R 2
 
 #[test]
 fn test_day9_larger() {
-    let input =
-r#"R 5
+    let input = r#"R 5
 U 8
 L 8
 D 3
