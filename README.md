@@ -2,5 +2,5 @@
 
 Solutions for Advent of Code 2022, used as an opportunity to get more familiar with Rust.
 
-Code's gone through minor refactorings (removing dead code, etc) and clippy linting since the challenge ended, but no significant logic or structural changes. At some point I may come back and refactor further to make it more idiomatic or performant.
+I've made some subsequent changes since the challenge ended, so if you want to see what the solutions originally looked like, check the history.
 
